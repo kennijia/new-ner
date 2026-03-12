@@ -1,0 +1,186 @@
+:ID,name,:LABEL
+n1,水库水位已上涨至警戒水位以上,Entity
+n2,启动防汛应急响应,Entity
+n3,水位超过警戒水位,Entity
+n4,启动应急响应措施,Entity
+n5,江水水位超过警戒水位,Entity
+n6,发布预警信息,Entity
+n7,水位超过警戒线,Entity
+n8,启动防汛应急响应措施,Entity
+n9,水库水位上涨至警戒水位,Entity
+n10,启动防汛应急预案,Entity
+n11,水位上涨,Entity
+n12,启动防汛应急响应预案,Entity
+n13,启动应急响应预案,Entity
+n14,水位上涨到预警水位,Entity
+n15,启动预警响应措施,Entity
+n16,水位达到警戒线,Entity
+n17,疏散工作,Entity
+n18,水位上升到超警戒水位,Entity
+n19,采取紧急措施进行防洪,Entity
+n20,采取必要措施,Entity
+n21,水库水位快速上涨,Entity
+n22,水位已上涨至预警水位以上,Entity
+n23,水库水位已经上涨到警戒水位,Entity
+n24,水位已达到警戒线,Entity
+n25,水位上涨到警戒水位,Entity
+n26,当降雨量超过警戒水位,Entity
+n27,采取应急措施防范洪水,Entity
+n28,水位上涨至防汛警戒水位,Entity
+n29,巡查,Entity
+n30,水位上涨到超过警戒水位,Entity
+n31,水库水位已经上涨到警戒线以上,Entity
+n32,超警戒值,Entity
+n33,一旦水位超过警戒线,Entity
+n34,水库水位已上涨到警戒线以上,Entity
+n35,关注洪水情况并,Entity
+n36,加固堤防工作,Entity
+n37,采取必要措施降低汛情风险,Entity
+n38,水库水位达到警戒线,Entity
+n39,采取降低库水位的措施,Entity
+n40,水库水位已经超过安全警戒线,Entity
+n41,采取措施,Entity
+n42,当降雨量超过警戒值,Entity
+n43,水位上涨到危险警戒线,Entity
+n44,水库水位超过警戒线,Entity
+n45,采取有效措施确保人民生命,Entity
+n46,水位超过保证水位,Entity
+n47,启动预警响应机制,Entity
+n48,启动防洪预案,Entity
+n49,水位上涨到警戒线以上,Entity
+n50,水库水位上涨到警戒线以上,Entity
+n51,采取相应措施,Entity
+n52,组织开闸泄洪,Entity
+n53,启动防汛预警响应,Entity
+n54,采取措施降低风险,Entity
+n55,启动防汛预案,Entity
+n56,水位超警,Entity
+n57,启动应急响应,Entity
+n58,超过该水位需及,Entity
+n59,泄洪,Entity
+n60,启动应急响应预案进行调度,Entity
+n61,启动排水泵站,Entity
+n62,当水位超过警戒水位,Entity
+n63,通知相关部门采取必要措施,Entity
+n64,水位上涨超过警戒水位,Entity
+n65,水位上涨超过警戒线,Entity
+n66,水位已经超过了警戒线,Entity
+n67,当江水位超警戒值,Entity
+n68,一旦降雨量超过警戒值,Entity
+n69,水库水位超警,Entity
+n70,水位上涨到超警戒水位,Entity
+n71,水位上涨至 100.50m,Entity
+n72,采取防汛措施,Entity
+n73,防汛工作,Entity
+n74,启动紧急防汛预案,Entity
+n75,一旦水位超警戒值,Entity
+n76,一旦降雨量超过安全防汛值,Entity
+n77,水库水位超过警戒水位,Entity
+n78,水库防洪警戒水位达到预警水位,Entity
+n79,启动相应防汛应急预案,Entity
+n80,当雨量达到警戒值,Entity
+n81,泄洪操作,Entity
+n82,启动应急预案,Entity
+n83,采取有效措施防止洪水灾害,Entity
+n84,水库水位超过安全水位,Entity
+n85,采取降低水位措施,Entity
+n86,水位已经上涨至警戒线以上,Entity
+n87,水位上涨到警戒水位以上,Entity
+n88,在水库水位超过安全限值,Entity
+n89,水位上涨到 108.50m,Entity
+n90,疏散附近居民,Entity
+n91,水位已上涨至水库警戒水位以上,Entity
+n92,采取措施应对可能的洪水威,Entity
+n93,水位上涨到警戒水位需要即,Entity
+n94,水位上涨到警戒值,Entity
+n95,采取有效措施保障人民生命,Entity
+n96,调整,Entity
+n97,水位,Entity
+n98,采取减排措施,Entity
+n99,水位上涨到预警值,Entity
+n100,通知相关部门并启动应急响,Entity
+n101,采取应急措施,Entity
+n102,警戒水位,Entity
+n103,水位超过警戒值,Entity
+n104,水位上涨情况,Entity
+n105,调整水库蓄水量,Entity
+n106,水位达到警戒水位,Entity
+n107,启动相应的防汛措施,Entity
+n108,水位上涨到防洪水位,Entity
+n109,排水措施,Entity
+n110,库水位达到 72.50m,Entity
+n111,自由溢流,Entity
+n112,水位达到 164.0m 且仍有上涨趋势,Entity
+n113,进驻水库一线,Entity
+n114,水库水位在 338.12m 以上,Entity
+n115,供水,Entity
+n116,100年一遇校核洪水,Entity
+n117,协同调度,Entity
+n118,灌溉,Entity
+n119,水位达到 162.50m 且预报有大雨,Entity
+n120,预泄调度,Entity
+n121,启动特大洪水应急预案,Entity
+n122,供水调度,Entity
+n123,水库水位上涨到163m,Entity
+n124,报告镇三防指挥所,Entity
+n125,库遇标准内洪水且下泄流量超过下游城镇防洪标准,Entity
+n126,启动防洪应急预案,Entity
+n127,水位达到或超过 355.12m,Entity
+n128,自由泄洪,Entity
+n129,水位超过 170.82m 且有满溢可能,Entity
+n130,启动超标准洪水防御预案,Entity
+n131,且下泄流量低于下游城镇防洪标准,Entity
+n132,调度,Entity
+n133,入库流量达 300 立方米每秒,Entity
+n134,启动防洪抢险应急预案,Entity
+n135,发电放水.关闭的条件是雨止且,Entity
+n136,位超过正常水位163m未达到20年一遇设计洪水位165.20m（溢洪水深2.20m),Entity
+n137,水库防汛工作由址山镇云新村调度,Entity
+n138,水库水位回落至 162.5m,Entity
+n139,报告,Entity
+n140,大坝,Entity
+n141,水位超过 165.82m 且有满溢可能,Entity
+n142,当水位下降至死水位 130.0m 以下,Entity
+n143,停止发电调度,Entity
+n144,当水位继续上涨接近危急水位,Entity
+n145,采取措施使损失减到最低限,Entity
+n146,库水位低于 338.12m,Entity
+n147,停止发电,Entity
+n148,日内流域累计面雨量大于 100mm 或者瞬时流量大于100m³/s,Entity
+n149,洪水预报,Entity
+n150,当水库坝前水位即将达到超标准洪水且有上升的趋势,Entity
+n151,启动防御超标准洪水预案,Entity
+n152,当水库坝前水位超过设计水位,Entity
+n153,当万安水库水位超过防洪限制水位 145.0m,Entity
+n154,开启溢洪道,Entity
+n155,水位达到 163.5m 且预报有大雨,Entity
+n156,下达调度令开启溢洪道,Entity
+n157,启动上下游群众转移预案,Entity
+n158,当水位达到紧急避险水位 167.5m,Entity
+n159,组织下游受威胁群众有序转,Entity
+n160,当库水位降至死水位 85.0m 以下,Entity
+n161,开启工业取水闸,Entity
+n162,水库水位在 338.12m 以下,Entity
+n163,库水位急剧上升,Entity
+n164,巡视一次,Entity
+n165,库水位达到 60.48m 及以上,Entity
+n166,关闸蓄洪,Entity
+n167,水位超过 165.50m 且仍有上涨趋势,Entity
+n168,排沙,Entity
+n169,库水位超66.33m,Entity
+n170,库水位处于 150m 至 155m 之间,Entity
+n171,采取错峰调度方式,Entity
+n172,开启放水底孔排沙,Entity
+n173,库水位超过60.00m,Entity
+n174,水位达到355.12m,Entity
+n175,当水位达到紧急水位,Entity
+n176,通知下游作好防洪避险准备,Entity
+n177,库水位高于 61.22m,Entity
+n178,敞泄,Entity
+n179,库水位达到 62.99m 及以上,Entity
+n180,加大下泄流量直至闸门全开敞泄,Entity
+n181,2）当水库遇超过 P=2%的洪水（设计洪水标准）或库水位超65.31m,Entity
+n182,全开泄洪,Entity
+n183,水库最大下泄流量不超过 50m³/s，当水库水位位于 62.99～64.73m,Entity
+n184,水位超过104.5米,Entity
+n185,进驻新安江水库,Entity

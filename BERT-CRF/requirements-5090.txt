@@ -1,0 +1,19 @@
+# Minimal, GPU-enabled environment for RTX 5090 (driver CUDA 13)
+# Use Python 3.8 (via conda) for legacy libs compatibility
+# Install PyTorch with CUDA 11.7 wheels (works on newer drivers)
+# NOTE: Do NOT install tensorflow 1.15 — not required by this subproject
+
+# PyTorch (CUDA 11.7)
+# Install via: pip install --index-url https://download.pytorch.org/whl/cu117 torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1+cu117
+
+# Core libs
+transformers==2.2.2
+pytorch-crf==0.7.2
+numpy==1.19.5
+scikit-learn==1.0.2
+sentencepiece==0.1.94
+pandas==1.5.3
+
+# Logging/metrics
+tensorboard==2.14.0
+tqdm==4.52.0

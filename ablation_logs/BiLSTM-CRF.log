@@ -1,0 +1,31 @@
+# project=BiLSTM-CRF
+# cmd=/root/miniconda3/bin/python run.py
+# start=2026-03-02 20:10:37
+
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+device: cuda:0
+-------- Vocabulary Loaded! --------
+Traceback (most recent call last):
+  File "/root/msy/ner/BiLSTM-CRF/run.py", line 163, in <module>
+    simple_run()
+  File "/root/msy/ner/BiLSTM-CRF/run.py", line 127, in simple_run
+    run(word_train, label_train, word_dev, label_dev, vocab, device, writer)
+  File "/root/msy/ner/BiLSTM-CRF/run.py", line 133, in run
+    train_dataset = NERDataset(word_train, label_train, vocab, config.label2id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/msy/ner/BiLSTM-CRF/data_loader.py", line 9, in __init__
+    self.dataset = self.preprocess(words, labels)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/msy/ner/BiLSTM-CRF/data_loader.py", line 17, in preprocess
+    label_id = [self.vocab.label_id(l_) for l_ in label]
+                ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/msy/ner/BiLSTM-CRF/Vocabulary.py", line 40, in label_id
+    return self.label2id[word]
+           ~~~~~~~~~~~~~^^^^^^
+KeyError: 'B-position'
+
+# exit_code=1
+# end=2026-03-02 20:10:40

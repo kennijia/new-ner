@@ -1,0 +1,29 @@
+# 忽略所有模型文件
+*.bin
+*.pth
+*.tar.gz
+# 忽略数据集文件夹
+# 忽略日志和输出
+outputs/
+tensorboard/
+__pycache__/
+*.venv
+.env
+.env.*
+!.env.example
+
+*.pt
+*.pth
+*.bin
+*.ckpt
+runs/
+logs/
+output/
+checkpoints/
+
+*.safetensors
+
+kg/
+
+train.log
+config.json
