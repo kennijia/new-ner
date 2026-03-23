@@ -141,6 +141,59 @@ def split_train_dev(samples: List[PairSample], dev_ratio: float, seed: int) -> T
     return samples[n_dev:], samples[:n_dev]
 
 
+def split_by_sentence_id_train_dev_test(
+    samples: List[PairSample],
+    dev_ratio: float,
+    test_ratio: float,
+    seed: int,
+) -> Tuple[List[PairSample], List[PairSample], List[PairSample]]:
+    """Split by sentence id into train/dev/test.
+
+    Ratios are with respect to the total number of unique sentence ids.
+    """
+    rnd = random.Random(seed)
+    sent_ids = sorted({s.sent_id for s in samples})
+    rnd.shuffle(sent_ids)
+
+    total = len(sent_ids)
+    n_test = max(1, int(total * float(test_ratio)))
+    n_dev = max(1, int(total * float(dev_ratio)))
+
+    # keep disjoint; allocate test first, then dev
+    test_ids = set(sent_ids[:n_test])
+    dev_ids = set(sent_ids[n_test : n_test + n_dev])
+
+    train = [s for s in samples if s.sent_id not in test_ids and s.sent_id not in dev_ids]
+    dev = [s for s in samples if s.sent_id in dev_ids]
+    test = [s for s in samples if s.sent_id in test_ids]
+    return train, dev, test
+
+
+def split_train_dev_test(
+    samples: List[PairSample],
+    dev_ratio: float,
+    test_ratio: float,
+    seed: int,
+) -> Tuple[List[PairSample], List[PairSample], List[PairSample]]:
+    """Pair-level shuffle split (fallback).
+
+    Note: can leak almost identical sentences across splits when samples are built
+    at pair-level; prefer `split_by_sentence_id_train_dev_test`.
+    """
+    rnd = random.Random(seed)
+    samples = list(samples)
+    rnd.shuffle(samples)
+
+    total = len(samples)
+    n_test = max(1, int(total * float(test_ratio)))
+    n_dev = max(1, int(total * float(dev_ratio)))
+
+    test = samples[:n_test]
+    dev = samples[n_test : n_test + n_dev]
+    train = samples[n_test + n_dev :]
+    return train, dev, test
+
+
 class PairDataset(Dataset):
     def __init__(self, samples: List[PairSample], tokenizer: AutoTokenizer, label2id: Dict[str, int], max_length: int):
         self.samples = samples

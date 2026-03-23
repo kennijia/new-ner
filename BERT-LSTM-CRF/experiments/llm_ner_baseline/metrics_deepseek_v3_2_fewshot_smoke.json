@@ -1,0 +1,22 @@
+{
+  "input": "data/my/admin_test.npz",
+  "model": "deepseek-v3.2",
+  "base_url": "https://api.openai-proxy.org/v1",
+  "few_shot_k": 5,
+  "few_shot_file": "data/my/admin_train.npz",
+  "few_shot_strategy": "first",
+  "few_shot_seed": 42,
+  "total": 5,
+  "parsed_ok": 5,
+  "parsed_fail": 0,
+  "request_fail": 0,
+  "micro_f1": 0.13333333333333333,
+  "f1_labels": {
+    "ACTION": 0.2222222222222222,
+    "LEVEL_KEY": 0.1818181818181818,
+    "OBJ": 0,
+    "ORG": 0,
+    "VALUE": 0
+  },
+  "output": "experiments/llm_ner_baseline/predictions_deepseek_v3_2_fewshot_smoke.jsonl"
+}

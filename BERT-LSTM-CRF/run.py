@@ -13,8 +13,25 @@ from transformers import get_cosine_schedule_with_warmup
 from torch.optim import AdamW
 
 import warnings
+import os
 
 warnings.filterwarnings('ignore')
+
+# Optional config overrides from environment (useful for grid/ablation runs)
+_env_use_dice = os.getenv("BERT_LSTM_CRF_USE_DICE_LOSS")
+if _env_use_dice is not None:
+    config.use_dice_loss = _env_use_dice.strip().lower() in {"1", "true", "yes", "y"}
+
+_env_dice_w = os.getenv("BERT_LSTM_CRF_DICE_LOSS_WEIGHT")
+if _env_dice_w is not None:
+    try:
+        config.dice_loss_weight = float(_env_dice_w)
+    except ValueError:
+        pass
+
+_env_exclude_o = os.getenv("BERT_LSTM_CRF_DICE_EXCLUDE_O")
+if _env_exclude_o is not None:
+    config.dice_exclude_o = _env_exclude_o.strip().lower() in {"1", "true", "yes", "y"}
 
 
 def dev_split(dataset_dir):
@@ -71,11 +88,35 @@ def load_dev(mode):
     return word_train, word_dev, label_train, label_dev
 
 
+def _build_hf_config():
+    """Build HuggingFace BertConfig used to initialize BertNER.
+
+    Our custom model reads Dice switches from the HF config object.
+    """
+    from transformers import BertConfig
+
+    hf_cfg = BertConfig.from_pretrained(config.roberta_model)
+    hf_cfg.num_labels = len(config.label2id)
+
+    # Mirror dice switches
+    hf_cfg.use_dice_loss = bool(getattr(config, 'use_dice_loss', False))
+    hf_cfg.dice_loss_weight = float(getattr(config, 'dice_loss_weight', 0.0))
+    hf_cfg.dice_exclude_o = bool(getattr(config, 'dice_exclude_o', True))
+
+    return hf_cfg
+
+
 def run():
     """train the model"""
     # set the logger
     utils.set_logger(config.log_dir)
     logging.info("device: {}".format(config.device))
+    logging.info(
+        "use_dice_loss=%s | dice_loss_weight=%s | dice_exclude_o=%s",
+        getattr(config, 'use_dice_loss', None),
+        getattr(config, 'dice_loss_weight', None),
+        getattr(config, 'dice_exclude_o', None),
+    )
     # 处理数据，分离文本和标签
     processor = Processor(config)
     processor.process()
@@ -96,7 +137,8 @@ def run():
     logging.info("--------Get Dataloader!--------")
     # Prepare model
     device = config.device
-    model = BertNER.from_pretrained(config.roberta_model, num_labels=len(config.label2id))
+    hf_cfg = _build_hf_config()
+    model = BertNER.from_pretrained(config.roberta_model, config=hf_cfg)
     model.to(device)
     # Prepare optimizer
     if config.full_fine_tuning:

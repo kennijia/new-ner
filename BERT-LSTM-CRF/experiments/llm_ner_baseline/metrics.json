@@ -1,0 +1,18 @@
+{
+  "input": "data/my/admin_test.npz",
+  "model": "gpt-4o-mini",
+  "base_url": "https://api.openai-proxy.org/v1",
+  "total": 189,
+  "parsed_ok": 189,
+  "parsed_fail": 0,
+  "request_fail": 0,
+  "micro_f1": 0.009823182711198428,
+  "f1_labels": {
+    "ACTION": 0.004889975550122249,
+    "LEVEL_KEY": 0.021052631578947368,
+    "OBJ": 0.013422818791946312,
+    "ORG": 0.014184397163120567,
+    "VALUE": 0
+  },
+  "output": "experiments/llm_ner_baseline/predictions.jsonl"
+}

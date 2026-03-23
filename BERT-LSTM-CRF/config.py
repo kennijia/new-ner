@@ -36,6 +36,14 @@ patience_num = 10
 use_fgm = True
 fgm_epsilon = 1.0
 
+# Dice Loss (mitigate label imbalance, especially the 'O' class)
+# When enabled, Dice loss will be combined with the CRF negative log-likelihood.
+use_dice_loss = False
+# total_loss = crf_loss + dice_loss_weight * dice_loss
+dice_loss_weight = 0.5
+# 不把“O”(background)计入 Dice 的平均（更关注实体类）
+dice_exclude_o = True
+
 gpu = '0'
 
 if gpu != '':

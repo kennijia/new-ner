@@ -69,6 +69,21 @@ if _env_exp_dir:
     config.exp_dir = config.model_dir
     config.log_dir = os.path.join(config.model_dir, "train.log")
 
+_env_backbone = os.getenv("BERT_CRF_BACKBONE")
+if _env_backbone:
+    # Override backbone path/name at runtime for quick model comparison.
+    # Example:
+    #   BERT_CRF_BACKBONE=/path/to/chinese-macbert-base python run.py
+    config.bert_model = _env_backbone
+
+_env_use_bilstm = os.getenv("BERT_CRF_USE_BILSTM")
+if _env_use_bilstm is not None:
+    config.use_bilstm = _env_use_bilstm.strip().lower() in {"1", "true", "yes", "y"}
+
+_env_use_fgm = os.getenv("BERT_CRF_USE_FGM")
+if _env_use_fgm is not None:
+    config.use_fgm = _env_use_fgm.strip().lower() in {"1", "true", "yes", "y"}
+
 
 def dev_split(dataset_dir):
     """split dev set"""
@@ -156,9 +171,10 @@ def run():
 
     # Log effective experiment knobs (helps debug grid runs)
     logging.info(
-        "exp_dir=%s | seed=%s | use_bilstm=%s | use_fgm=%s | use_dice_loss=%s | dice_loss_weight=%s | dice_exclude_o=%s",
+        "exp_dir=%s | seed=%s | backbone=%s | use_bilstm=%s | use_fgm=%s | use_dice_loss=%s | dice_loss_weight=%s | dice_exclude_o=%s",
         getattr(config, 'exp_dir', config.model_dir),
         getattr(config, 'seed', None),
+        getattr(config, 'bert_model', None),
         getattr(config, 'use_bilstm', None),
         getattr(config, 'use_fgm', None),
         getattr(config, 'use_dice_loss', None),

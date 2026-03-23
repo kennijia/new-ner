@@ -6,8 +6,12 @@ import torch
 base_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(base_dir, os.pardir))
 
-data_dir = os.path.join(project_dir, "BERT-CRF", "data", "my")
-train_file = os.path.join(data_dir, "admin-re.jsonl")
+# data_dir = os.path.join(project_dir, "BERT-CRF", "data", "my")
+# train_file = os.path.join(data_dir, "admin-re.downsampled.negpos1.jsonl")
+
+data_dir = os.path.join(project_dir, "BERT-RE")
+train_file = os.path.join(data_dir, "admin-ree.jsonl")
+
 dev_file = ""  # optional; if empty, will split from train
 test_file = ""  # optional
 
@@ -33,14 +37,18 @@ seed = 42
 # - "sentence": split by sentence id, then build pairs (recommended for papers)
 split_level = "sentence"
 
+# Ratios for splitting when `dev_file` / `test_file` are not provided.
+# Default: 8/1/1 (train/dev/test).
+# NOTE: dev_split_size + test_split_size should be < 1.0.
 dev_split_size = 0.1
+test_split_size = 0.1
 
 # Negative sampling:
 # With all ordered entity pairs, NoRelation is dominant. To stabilize training,
 # we downsample negative pairs to approximately neg_pos_ratio * num_positive.
 # - None / -1: keep all negatives
 # - 1.0: roughly 1:1 negatives to positives
-neg_pos_ratio = 3.0
+neg_pos_ratio = 2.0
 
 # FGM adversarial training (optional)
 use_fgm = False

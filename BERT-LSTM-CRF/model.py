@@ -5,6 +5,8 @@ from torch.nn.utils.rnn import pad_sequence
 from torchcrf import CRF
 from pathlib import Path
 
+from dice_loss import DiceLoss
+
 
 class BertNER(BertPreTrainedModel):
     # Transformers uses this to find/load the base model.
@@ -26,6 +28,16 @@ class BertNER(BertPreTrainedModel):
         )
         self.classifier = nn.Linear(config.hidden_size, config.num_labels)
         self.crf = CRF(config.num_labels, batch_first=True)
+
+        # Optional auxiliary Dice loss to mitigate label imbalance.
+        self.use_dice_loss = bool(getattr(config, "use_dice_loss", False))
+        self.dice_loss_weight = float(getattr(config, "dice_loss_weight", 0.5))
+        self.dice_exclude_o = bool(getattr(config, "dice_exclude_o", True))
+        self.dice_loss_fn = DiceLoss(
+            ignore_index=-1,
+            include_background=not self.dice_exclude_o,
+            background_index=0,
+        )
 
         self.init_weights()
 
@@ -121,7 +133,14 @@ class BertNER(BertPreTrainedModel):
         outputs = (logits,)
         if labels is not None:
             loss_mask = labels.gt(-1)
-            loss = self.crf(logits, labels, loss_mask) * (-1)
+            crf_loss = self.crf(logits, labels, loss_mask) * (-1)
+
+            if self.use_dice_loss and self.dice_loss_weight > 0:
+                dice_loss = self.dice_loss_fn(logits, labels)
+                loss = crf_loss + self.dice_loss_weight * dice_loss
+            else:
+                loss = crf_loss
+
             outputs = (loss,) + outputs
 
         # contain: (loss), scores

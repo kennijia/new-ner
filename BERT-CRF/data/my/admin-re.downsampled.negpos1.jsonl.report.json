@@ -1,0 +1,23 @@
+{
+  "input": "BERT-CRF/data/my/admin-re.jsonl",
+  "output": "BERT-CRF/data/my/admin-re.downsampled.negpos1.jsonl",
+  "seed": 42,
+  "input_total": 406,
+  "input_pos_sent": 218,
+  "input_neg_sent": 188,
+  "output_total": 406,
+  "output_pos_sent": 218,
+  "output_neg_sent": 188,
+  "stats_input": {
+    "Condition": 189,
+    "Trigger": 172,
+    "NoRelation_sentence": 188,
+    "Attribute_of": 116
+  },
+  "stats_output": {
+    "NoRelation_sentence": 188,
+    "Attribute_of": 116,
+    "Condition": 189,
+    "Trigger": 172
+  }
+}
