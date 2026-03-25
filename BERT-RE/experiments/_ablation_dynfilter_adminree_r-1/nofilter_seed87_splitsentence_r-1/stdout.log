@@ -1,0 +1,62 @@
+2026-03-23 18:51:57,769 - INFO - === BERT-RE pair classification ===
+2026-03-23 18:51:57,770 - INFO - train_file=/root/msy/ner/BERT-RE/admin-ree.jsonl
+2026-03-23 18:51:57,770 - INFO - bert_model=/root/msy/ner/BERT-CRF/pretrained_bert_models/chinese_roberta_wwm_large_ext
+2026-03-23 18:51:57,770 - INFO - exp_dir=/root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/nofilter_seed87_splitsentence_r-1
+2026-03-23 18:51:57,770 - INFO - seed=87 split_level=sentence neg_pos_ratio=-1.0
+2026-03-23 18:51:57,779 - INFO - Built pair samples: 4062
+2026-03-23 18:51:57,779 - INFO - Label distribution (raw): {'Condition': 185, 'NoRelation': 3594, 'Trigger': 170, 'Attribute_of': 113}
+2026-03-23 18:51:57,780 - INFO - Neg downsampling applied: neg_pos_ratio=-1.0 | train size 2966 -> 2966 | before={'Condition': 151, 'NoRelation': 2588, 'Trigger': 143, 'Attribute_of': 84} | after={'Condition': 151, 'NoRelation': 2588, 'Trigger': 143, 'Attribute_of': 84}
+2026-03-23 18:51:57,780 - INFO - Split: train=2966 dev=442 test=654 | split_level=sentence
+2026-03-23 18:51:57,780 - INFO - Label distribution (train after neg-sampling): {'Condition': 151, 'NoRelation': 2588, 'Trigger': 143, 'Attribute_of': 84}
+2026-03-23 18:51:57,781 - INFO - Label distribution (dev): {'Condition': 19, 'NoRelation': 394, 'Trigger': 16, 'Attribute_of': 13}
+2026-03-23 18:51:57,781 - INFO - Label distribution (test): {'Condition': 15, 'NoRelation': 612, 'Trigger': 11, 'Attribute_of': 16}
+2026-03-23 18:51:57,781 - INFO - Labels: {'NoRelation': 0, 'Attribute_of': 1, 'Condition': 2, 'Trigger': 3}
+2026-03-23 18:51:57,790 - INFO - Marker token ids: [HEAD]=21128, [TAIL]=21130
+The new embeddings will be initialized from a multivariate normal distribution that has old embeddings' mean and covariance. As described in this article: https://nlp.stanford.edu/~johnhew/vocab-expansion.html. To disable this, use `mean_resizing=False`
+2026-03-23 18:52:29,775 - INFO - Epoch 1/10 | train_loss=0.573617 | dev_loss=0.585191 | dev_micro_p=0.3043 dev_micro_r=0.1628 dev_micro_f1=0.2121 (pos_support=43)
+2026-03-23 18:52:29,775 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=13) | Condition:P=0.304 R=0.368 F1=0.333 (sup=19) | Trigger:P=0.000 R=0.000 F1=0.000 (sup=16)
+2026-03-23 18:52:29,775 - INFO - Dev confusion (gold=Attribute_of, n=13): NoRelation=13
+2026-03-23 18:52:29,776 - INFO - Test: loss=0.477898 | micro_p=0.3889 micro_r=0.1842 micro_f1=0.2500 (pos_support=38)
+2026-03-23 18:52:29,777 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/nofilter_seed87_splitsentence_r-1/best.pt.head_only.pt (best_f1=0.2121)
+2026-03-23 18:52:56,914 - INFO - Epoch 2/10 | train_loss=0.431058 | dev_loss=0.421224 | dev_micro_p=0.7143 dev_micro_r=0.1042 dev_micro_f1=0.1818 (pos_support=48)
+2026-03-23 18:52:56,914 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=13) | Condition:P=0.000 R=0.000 F1=0.000 (sup=19) | Trigger:P=0.714 R=0.312 F1=0.435 (sup=16)
+2026-03-23 18:52:56,914 - INFO - Dev confusion (gold=Attribute_of, n=13): NoRelation=13
+2026-03-23 18:52:56,914 - INFO - Test: loss=0.276405 | micro_p=0.7500 micro_r=0.0714 micro_f1=0.1304 (pos_support=42)
+2026-03-23 18:53:23,512 - INFO - Epoch 3/10 | train_loss=0.375209 | dev_loss=0.359089 | dev_micro_p=0.6923 dev_micro_r=0.1915 dev_micro_f1=0.3000 (pos_support=47)
+2026-03-23 18:53:23,513 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=13) | Condition:P=0.625 R=0.263 F1=0.370 (sup=19) | Trigger:P=0.800 R=0.250 F1=0.381 (sup=16)
+2026-03-23 18:53:23,513 - INFO - Dev confusion (gold=Attribute_of, n=13): NoRelation=13
+2026-03-23 18:53:23,513 - INFO - Test: loss=0.294522 | micro_p=0.6364 micro_r=0.1707 micro_f1=0.2692 (pos_support=41)
+2026-03-23 18:53:23,513 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/nofilter_seed87_splitsentence_r-1/best.pt.head_only.pt (best_f1=0.3000)
+2026-03-23 18:53:49,941 - INFO - Epoch 4/10 | train_loss=0.334612 | dev_loss=0.362936 | dev_micro_p=0.8462 dev_micro_r=0.2292 dev_micro_f1=0.3607 (pos_support=48)
+2026-03-23 18:53:49,941 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=13) | Condition:P=1.000 R=0.316 F1=0.480 (sup=19) | Trigger:P=0.714 R=0.312 F1=0.435 (sup=16)
+2026-03-23 18:53:49,941 - INFO - Dev confusion (gold=Attribute_of, n=13): NoRelation=13
+2026-03-23 18:53:49,941 - INFO - Test: loss=0.252562 | micro_p=0.5833 micro_r=0.1707 micro_f1=0.2642 (pos_support=41)
+2026-03-23 18:53:49,942 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/nofilter_seed87_splitsentence_r-1/best.pt.head_only.pt (best_f1=0.3607)
+2026-03-23 18:54:16,104 - INFO - Epoch 5/10 | train_loss=0.324650 | dev_loss=0.355560 | dev_micro_p=0.5641 dev_micro_r=0.4783 dev_micro_f1=0.5176 (pos_support=46)
+2026-03-23 18:54:16,104 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=13) | Condition:P=0.619 R=0.684 F1=0.650 (sup=19) | Trigger:P=0.500 R=0.562 F1=0.529 (sup=16)
+2026-03-23 18:54:16,104 - INFO - Dev confusion (gold=Attribute_of, n=13): NoRelation=13
+2026-03-23 18:54:16,104 - INFO - Test: loss=0.284895 | micro_p=0.6154 micro_r=0.3902 micro_f1=0.4776 (pos_support=41)
+2026-03-23 18:54:16,105 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/nofilter_seed87_splitsentence_r-1/best.pt.head_only.pt (best_f1=0.5176)
+2026-03-23 18:54:42,720 - INFO - Epoch 6/10 | train_loss=0.289313 | dev_loss=0.332412 | dev_micro_p=0.5435 dev_micro_r=0.5435 dev_micro_f1=0.5435 (pos_support=46)
+2026-03-23 18:54:42,720 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=13) | Condition:P=0.722 R=0.684 F1=0.703 (sup=19) | Trigger:P=0.429 R=0.750 F1=0.545 (sup=16)
+2026-03-23 18:54:42,721 - INFO - Dev confusion (gold=Attribute_of, n=13): NoRelation=13
+2026-03-23 18:54:42,721 - INFO - Test: loss=0.274659 | micro_p=0.5667 micro_r=0.4048 micro_f1=0.4722 (pos_support=42)
+2026-03-23 18:54:42,721 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/nofilter_seed87_splitsentence_r-1/best.pt.head_only.pt (best_f1=0.5435)
+2026-03-23 18:55:09,515 - INFO - Epoch 7/10 | train_loss=0.254865 | dev_loss=0.334300 | dev_micro_p=0.5625 dev_micro_r=0.6000 dev_micro_f1=0.5806 (pos_support=45)
+2026-03-23 18:55:09,516 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=13) | Condition:P=0.636 R=0.737 F1=0.683 (sup=19) | Trigger:P=0.500 R=0.812 F1=0.619 (sup=16)
+2026-03-23 18:55:09,516 - INFO - Dev confusion (gold=Attribute_of, n=13): NoRelation=13
+2026-03-23 18:55:09,516 - INFO - Test: loss=0.271374 | micro_p=0.5161 micro_r=0.3902 micro_f1=0.4444 (pos_support=41)
+2026-03-23 18:55:09,517 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/nofilter_seed87_splitsentence_r-1/best.pt.head_only.pt (best_f1=0.5806)
+2026-03-23 18:55:36,063 - INFO - Epoch 8/10 | train_loss=0.244207 | dev_loss=0.280858 | dev_micro_p=0.7600 dev_micro_r=0.3958 dev_micro_f1=0.5205 (pos_support=48)
+2026-03-23 18:55:36,063 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=13) | Condition:P=0.786 R=0.579 F1=0.667 (sup=19) | Trigger:P=0.727 R=0.500 F1=0.593 (sup=16)
+2026-03-23 18:55:36,063 - INFO - Dev confusion (gold=Attribute_of, n=13): NoRelation=13
+2026-03-23 18:55:36,063 - INFO - Test: loss=0.235469 | micro_p=0.8500 micro_r=0.4048 micro_f1=0.5484 (pos_support=42)
+2026-03-23 18:56:02,883 - INFO - Epoch 9/10 | train_loss=0.215141 | dev_loss=0.290806 | dev_micro_p=0.7407 dev_micro_r=0.4167 dev_micro_f1=0.5333 (pos_support=48)
+2026-03-23 18:56:02,883 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=13) | Condition:P=0.722 R=0.684 F1=0.703 (sup=19) | Trigger:P=0.778 R=0.438 F1=0.560 (sup=16)
+2026-03-23 18:56:02,883 - INFO - Dev confusion (gold=Attribute_of, n=13): NoRelation=13
+2026-03-23 18:56:02,883 - INFO - Test: loss=0.230391 | micro_p=0.7273 micro_r=0.3810 micro_f1=0.5000 (pos_support=42)
+2026-03-23 18:56:29,629 - INFO - Epoch 10/10 | train_loss=0.202229 | dev_loss=0.277740 | dev_micro_p=0.7000 dev_micro_r=0.4468 dev_micro_f1=0.5455 (pos_support=47)
+2026-03-23 18:56:29,629 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=13) | Condition:P=0.722 R=0.684 F1=0.703 (sup=19) | Trigger:P=0.667 R=0.500 F1=0.571 (sup=16)
+2026-03-23 18:56:29,629 - INFO - Dev confusion (gold=Attribute_of, n=13): NoRelation=13
+2026-03-23 18:56:29,629 - INFO - Test: loss=0.222938 | micro_p=0.7391 micro_r=0.4048 micro_f1=0.5231 (pos_support=42)
+2026-03-23 18:56:29,629 - INFO - Training done. Best dev micro-F1=0.5806 | corresponding test micro-F1=0.4444 (P=0.5161 R=0.3902, pos_support=41)

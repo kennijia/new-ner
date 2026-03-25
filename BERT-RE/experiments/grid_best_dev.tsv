@@ -1,0 +1,19 @@
+exp	ratio	seed	best_dev_micro_f1
+grid_negpos_r1_seed13_splitsentence_20260323_140809	1.0	13	0.491200
+grid_negpos_r1_seed21_splitsentence_20260323_140809	1.0	21	0.427200
+grid_negpos_r1_seed42_splitsentence_20260323_140809	1.0	42	0.414600
+grid_negpos_r1_seed87_splitsentence_20260323_140809	1.0	87	0.351400
+grid_negpos_r1_seed123_splitsentence_20260323_140809	1.0	123	0.457600
+grid_negpos_r2_seed13_splitsentence_20260323_140809	2.0	13	0.606700
+grid_negpos_r2_seed21_splitsentence_20260323_140809	2.0	21	0.482800
+grid_negpos_r2_seed42_splitsentence_20260323_140809	2.0	42	0.493800
+grid_negpos_r2_seed87_splitsentence_20260323_140809	2.0	87	0.465500
+grid_negpos_r2_seed123_splitsentence_20260323_140809	2.0	123	0.514300
+grid_negpos_r3_seed42_splitsentence_20260320_002725	3.0	42	0.195500
+grid_negpos_r4_seed13_splitsentence_20260323_140809	4.0	13	0.181800
+grid_negpos_r-1_seed13_splitsentence_20260323_140809		13	0.686600
+grid_negpos_r-1_seed21_splitsentence_20260323_140809		21	0.649400
+grid_negpos_r-1_seed42_splitsentence_20260323_140809		42	0.645200
+grid_negpos_r-1_seed87_splitsentence_20260323_140809		87	0.580600
+grid_negpos_r-1_seed123_splitsentence_20260323_140809		123	0.593400
+re_pair_cls			0.493800

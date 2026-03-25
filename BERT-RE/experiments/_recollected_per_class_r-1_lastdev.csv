@@ -1,0 +1,6 @@
+best_dev_micro_f1,corresponding_test_micro_f1,dev_Attribute_of_f1,dev_Attribute_of_p,dev_Attribute_of_r,dev_Attribute_of_sup,dev_Condition_f1,dev_Condition_p,dev_Condition_r,dev_Condition_sup,dev_Trigger_f1,dev_Trigger_p,dev_Trigger_r,dev_Trigger_sup,log_path,neg_pos_ratio,seed
+0.5934,0.5758,0.0,0.0,0.0,20,0.8,0.933,0.7,20,0.722,0.722,0.722,18,/root/msy/ner/BERT-RE/experiments/grid_negpos_r-1_seed123_splitsentence_20260323_140809/train.log,-1.0,123
+0.6866,0.6032,0.0,0.0,0.0,9,0.839,0.812,0.867,15,0.741,0.909,0.625,16,/root/msy/ner/BERT-RE/experiments/grid_negpos_r-1_seed13_splitsentence_20260323_161704/train.log,-1.0,13
+0.6494,0.6133,0.0,0.0,0.0,10,0.8,0.875,0.737,19,0.688,0.688,0.688,16,/root/msy/ner/BERT-RE/experiments/grid_negpos_r-1_seed21_splitsentence_20260323_140809/train.log,-1.0,21
+0.6452,0.7436,0.0,0.0,0.0,17,0.96,0.923,1.0,12,0.8,0.8,0.8,10,/root/msy/ner/BERT-RE/experiments/grid_negpos_r-1_seed42_splitsentence_20260323_140809/train.log,-1.0,42
+0.5806,0.4324,0.0,0.0,0.0,13,0.703,0.722,0.684,19,0.571,0.667,0.5,16,/root/msy/ner/BERT-RE/experiments/grid_negpos_r-1_seed87_splitsentence_20260323_140809/train.log,-1.0,87

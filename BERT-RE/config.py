@@ -54,6 +54,24 @@ neg_pos_ratio = 2.0
 use_fgm = False
 fgm_epsilon = 1.0
 
+# Dynamic confidence thresholding + forbidden relation filtering (post-processing)
+# Default: disabled.
+# When enabled, each epoch will tune a probability threshold on dev to reach the
+# target precision (computed on positive predictions), then apply the filter to
+# dev/test predictions (low-confidence positives -> NoRelation; forbidden -> NoRelation).
+use_dyn_filter = False
+
+dyn_filter_target_precision = 0.85
+# Search range for threshold in [min, max]
+dyn_filter_min_threshold = 0.0
+dyn_filter_max_threshold = 0.99
+# Number of steps for linear grid search (inclusive)
+dyn_filter_num_steps = 50
+
+# Comma-separated relation names to be hard-filtered as NoRelation.
+# Example: "Located_in,Part_of". Leave empty to disable forbidden filtering.
+forbidden_relations_csv = ""
+
 gpu = "0"
 if gpu != "":
     device = torch.device(f"cuda:{gpu}")

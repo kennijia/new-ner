@@ -57,6 +57,29 @@ def _resolve_run_config():
     use_fgm = _env_override_bool("BERT_RE_USE_FGM", getattr(config, "use_fgm", False))
     fgm_epsilon = _env_override_float("BERT_RE_FGM_EPSILON", getattr(config, "fgm_epsilon", 1.0))
 
+    # Optional: cost-sensitive learning via class weights
+    use_class_weights = _env_override_bool("BERT_RE_USE_CLASS_WEIGHTS", getattr(config, "use_class_weights", False))
+    class_weight_mode = _env_override_str("BERT_RE_CLASS_WEIGHT_MODE", getattr(config, "class_weight_mode", "inv_sqrt"))  # inv_sqrt | inv
+    class_weight_max = _env_override_float("BERT_RE_CLASS_WEIGHT_MAX", getattr(config, "class_weight_max", 10.0))
+
+    # Optional: dynamic confidence + forbidden-relation filtering (post-processing)
+    use_dyn_filter = _env_override_bool("BERT_RE_USE_DYN_FILTER", getattr(config, "use_dyn_filter", False))
+    dyn_filter_target_precision = _env_override_float(
+        "BERT_RE_DYN_FILTER_TARGET_PREC", getattr(config, "dyn_filter_target_precision", 0.85)
+    )
+    dyn_filter_min_threshold = _env_override_float(
+        "BERT_RE_DYN_FILTER_MIN_THR", getattr(config, "dyn_filter_min_threshold", 0.0)
+    )
+    dyn_filter_max_threshold = _env_override_float(
+        "BERT_RE_DYN_FILTER_MAX_THR", getattr(config, "dyn_filter_max_threshold", 0.99)
+    )
+    dyn_filter_num_steps = _env_override_int(
+        "BERT_RE_DYN_FILTER_STEPS", getattr(config, "dyn_filter_num_steps", 50)
+    )
+    forbidden_relations_csv = _env_override_str(
+        "BERT_RE_FORBIDDEN_RELATIONS", getattr(config, "forbidden_relations_csv", "")
+    )
+
     return {
         "exp_dir": exp_dir,
         "log_path": os.path.join(exp_dir, "train.log"),
@@ -65,7 +88,62 @@ def _resolve_run_config():
         "neg_pos_ratio": neg_pos_ratio,
         "use_fgm": use_fgm,
         "fgm_epsilon": fgm_epsilon,
+        "use_class_weights": use_class_weights,
+        "class_weight_mode": class_weight_mode,
+        "class_weight_max": class_weight_max,
+        "use_dyn_filter": use_dyn_filter,
+        "dyn_filter_target_precision": dyn_filter_target_precision,
+        "dyn_filter_min_threshold": dyn_filter_min_threshold,
+        "dyn_filter_max_threshold": dyn_filter_max_threshold,
+        "dyn_filter_num_steps": dyn_filter_num_steps,
+        "forbidden_relations_csv": forbidden_relations_csv,
     }
+
+
+def _parse_forbidden_relations(csv_str: str) -> set[str]:
+    if not csv_str:
+        return set()
+    parts = [p.strip() for p in csv_str.split(",")]
+    return {p for p in parts if p}
+
+
+def _compute_class_weights(
+    train_samples,
+    *,
+    label2id: Dict[str, int],
+    mode: str = "inv_sqrt",
+    max_w: float = 10.0,
+) -> torch.Tensor:
+    """Compute per-class weights for CrossEntropyLoss from training label frequencies.
+
+    Parameters
+    ----------
+    mode:
+        - inv_sqrt: w_c = 1 / sqrt(freq_c)
+        - inv:      w_c = 1 / freq_c
+    max_w:
+        Clamp max weight to avoid exploding gradients.
+    """
+    counts = Counter([s.label for s in train_samples])
+    freqs = []
+    for lbl, lid in sorted(label2id.items(), key=lambda x: x[1]):
+        freqs.append(max(1, int(counts.get(lbl, 0))))
+
+    w = []
+    for f in freqs:
+        if mode == "inv":
+            ww = 1.0 / float(f)
+        else:
+            ww = 1.0 / (float(f) ** 0.5)
+        w.append(ww)
+
+    mean_w = sum(w) / max(1, len(w))
+    w = [x / mean_w for x in w]
+
+    if max_w is not None and max_w > 0:
+        w = [min(float(max_w), float(x)) for x in w]
+
+    return torch.tensor(w, dtype=torch.float32)
 
 
 def _build_label_space(samples) -> Dict[str, int]:
@@ -77,13 +155,100 @@ def _build_label_space(samples) -> Dict[str, int]:
     return {l: i for i, l in enumerate(labels)}
 
 
+def _compute_precision_for_threshold(
+    y_true: List[int],
+    probs: torch.Tensor,
+    *,
+    no_relation_id: int,
+    threshold: float,
+    forbidden_pos_ids: set[int] | None = None,
+) -> float:
+    """Precision over positive predictions after threshold + forbidden filtering."""
+    if forbidden_pos_ids is None:
+        forbidden_pos_ids = set()
+
+    # predicted label by argmax
+    pred = probs.argmax(dim=-1)
+    conf = probs.gather(1, pred.view(-1, 1)).squeeze(1)
+
+    # filter low confidence positives -> NoRelation
+    out_pred = pred.clone()
+    low_conf = (pred != no_relation_id) & (conf < threshold)
+    out_pred[low_conf] = no_relation_id
+
+    # filter forbidden relations -> NoRelation
+    if forbidden_pos_ids:
+        forb = torch.zeros_like(out_pred, dtype=torch.bool)
+        for pid in forbidden_pos_ids:
+            forb |= out_pred == pid
+        out_pred[forb] = no_relation_id
+
+    # compute precision on positive predictions
+    tp = fp = 0
+    for t, p in zip(y_true, out_pred.tolist()):
+        if p != no_relation_id:
+            if p == t and t != no_relation_id:
+                tp += 1
+            else:
+                fp += 1
+    return tp / (tp + fp) if (tp + fp) else 0.0
+
+
 @torch.no_grad()
-def evaluate(model, dl, device, positive_ids: List[int]):
+def _apply_dyn_filter(
+    y_true: List[int],
+    logits: torch.Tensor,
+    *,
+    no_relation_id: int,
+    threshold: float,
+    forbidden_pos_ids: set[int] | None = None,
+) -> Tuple[List[int], Dict[str, int]]:
+    """Apply threshold + forbidden relation filtering and return filtered predictions."""
+    if forbidden_pos_ids is None:
+        forbidden_pos_ids = set()
+
+    probs = torch.softmax(logits, dim=-1)
+    pred = probs.argmax(dim=-1)
+    conf = probs.gather(1, pred.view(-1, 1)).squeeze(1)
+
+    out_pred = pred.clone()
+
+    low_conf = (pred != no_relation_id) & (conf < threshold)
+    out_pred[low_conf] = no_relation_id
+
+    forb_cnt = 0
+    if forbidden_pos_ids:
+        forb_mask = torch.zeros_like(out_pred, dtype=torch.bool)
+        for pid in forbidden_pos_ids:
+            forb_mask |= out_pred == pid
+        forb_cnt = int(forb_mask.sum().item())
+        out_pred[forb_mask] = no_relation_id
+
+    stats = {
+        "filtered_low_conf": int(low_conf.sum().item()),
+        "filtered_forbidden": forb_cnt,
+    }
+    return out_pred.detach().cpu().tolist(), stats
+
+
+@torch.no_grad()
+def evaluate(
+    model,
+    dl,
+    device,
+    positive_ids: List[int],
+    *,
+    confusion_label_ids: List[int] | None = None,
+    dyn_filter: Dict[str, object] | None = None,
+):
     model.eval()
     y_true: List[int] = []
     y_pred: List[int] = []
     total_loss = 0.0
     n = 0
+
+    # Store logits for optional post-processing
+    all_logits: List[torch.Tensor] = []
 
     for batch in dl:
         batch = {k: v.to(device) for k, v in batch.items()}
@@ -96,6 +261,25 @@ def evaluate(model, dl, device, positive_ids: List[int]):
         n += batch["input_ids"].shape[0]
         y_true.extend(batch["labels"].detach().cpu().tolist())
         y_pred.extend(pred.detach().cpu().tolist())
+
+        if dyn_filter is not None:
+            all_logits.append(logits.detach().cpu())
+
+    # Optional dynamic filter (threshold + forbidden relations)
+    filter_stats = None
+    if dyn_filter is not None:
+        no_relation_id = int(dyn_filter["no_relation_id"])
+        threshold = float(dyn_filter["threshold"])
+        forbidden_pos_ids = set(dyn_filter.get("forbidden_pos_ids") or [])
+
+        logits_cat = torch.cat(all_logits, dim=0) if all_logits else torch.empty((0,))
+        y_pred, filter_stats = _apply_dyn_filter(
+            y_true,
+            logits_cat,
+            no_relation_id=no_relation_id,
+            threshold=threshold,
+            forbidden_pos_ids=forbidden_pos_ids,
+        )
 
     m = micro_prf(y_true, y_pred, positive_ids=positive_ids)
 
@@ -118,7 +302,17 @@ def evaluate(model, dl, device, positive_ids: List[int]):
         return out
 
     per_cls = _per_label_prf(y_true, y_pred, positive_ids)
-    return total_loss / max(1, n), m, per_cls
+
+    # Optional: prediction distribution given gold label (for error analysis)
+    # confusion[gold][pred] = count
+    confusion = None
+    if confusion_label_ids:
+        confusion = {gid: Counter() for gid in confusion_label_ids}
+        for t, p in zip(y_true, y_pred):
+            if t in confusion:
+                confusion[t][p] += 1
+
+    return total_loss / max(1, n), m, per_cls, confusion, filter_stats
 
 
 def _atomic_torch_save(obj, path: str, *, retries: int = 1) -> None:
@@ -146,6 +340,16 @@ def _atomic_torch_save(obj, path: str, *, retries: int = 1) -> None:
                 pass
     assert err is not None
     raise err
+
+
+def _should_save_full_ckpt() -> bool:
+    """Whether to save full model weights.
+
+    Default: False to avoid huge checkpoints (BERT weights) exhausting disk.
+    Set env `BERT_RE_SAVE_FULL_CKPT=1` to enable.
+    """
+    v = os.environ.get("BERT_RE_SAVE_FULL_CKPT", "")
+    return v.strip().lower() in {"1", "true", "yes", "y"}
 
 
 def main() -> int:
@@ -242,6 +446,54 @@ def main() -> int:
     positive_ids = [i for l, i in label2id.items() if l != "NoRelation"]
     logger.info("Labels: %s", label2id)
 
+    # Dynamic filter config (threshold is tuned on dev each epoch if enabled)
+    forbidden_rel_names = _parse_forbidden_relations(str(run_cfg.get("forbidden_relations_csv") or ""))
+    forbidden_pos_ids: set[int] = set()
+    for name in forbidden_rel_names:
+        if name in label2id and name != "NoRelation":
+            forbidden_pos_ids.add(int(label2id[name]))
+
+    dyn_cfg = None
+    dyn_threshold = 0.0
+    if run_cfg.get("use_dyn_filter"):
+        dyn_cfg = {
+            "no_relation_id": int(label2id.get("NoRelation", 0)),
+            "threshold": 0.0,  # filled in each epoch
+            "forbidden_pos_ids": forbidden_pos_ids,
+        }
+        logger.info(
+            "Dynamic filter enabled: target_prec=%.3f steps=%d thr_range=[%.2f, %.2f], forbidden=%s",
+            float(run_cfg.get("dyn_filter_target_precision") or 0.85),
+            int(run_cfg.get("dyn_filter_num_steps") or 50),
+            float(run_cfg.get("dyn_filter_min_threshold") or 0.0),
+            float(run_cfg.get("dyn_filter_max_threshold") or 0.99),
+            sorted(list(forbidden_rel_names)),
+        )
+
+    # Optional: class-weighted loss for imbalanced classes
+    ce_loss_fn = None
+    try:
+        if run_cfg.get("use_class_weights"):
+            w = _compute_class_weights(
+                train_samples,
+                label2id=label2id,
+                mode=str(run_cfg.get("class_weight_mode") or "inv_sqrt"),
+                max_w=float(run_cfg.get("class_weight_max") or 10.0),
+            )
+            ce_loss_fn = torch.nn.CrossEntropyLoss(weight=w.to(config.device))
+            # Log weights with label names for analysis
+            parts = []
+            for lbl, lid in sorted(label2id.items(), key=lambda x: x[1]):
+                parts.append(f"{lbl}={float(w[lid]):.4f}")
+            logger.info(
+                "Using class-weighted CrossEntropyLoss (mode=%s, max=%.2f): %s",
+                run_cfg.get("class_weight_mode"),
+                float(run_cfg.get("class_weight_max") or 10.0),
+                ", ".join(parts),
+            )
+    except Exception:
+        ce_loss_fn = None
+
     # Robust tokenizer loading for local Chinese RoBERTa checkpoints.
     # Some checkpoints in this repo have a non-standard `config.json` that can
     # confuse AutoTokenizer; they still ship a standard `vocab.txt`.
@@ -332,7 +584,13 @@ def main() -> int:
         for batch in train_dl:
             batch = {k: v.to(config.device) for k, v in batch.items()}
             out = model(**batch)
-            loss = out.loss
+
+            # If enabled, override model's internal loss with class-weighted CE.
+            if ce_loss_fn is not None:
+                loss = ce_loss_fn(out.logits, batch["labels"])
+            else:
+                loss = out.loss
+
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optim.step()
@@ -343,8 +601,63 @@ def main() -> int:
             n += batch["input_ids"].shape[0]
 
         train_loss = total_loss / max(1, n)
-        dev_loss, dev_m, dev_per_cls = evaluate(model, dev_dl, config.device, positive_ids=positive_ids)
-        test_loss, test_m, test_per_cls = evaluate(model, test_dl, config.device, positive_ids=positive_ids)
+
+        # If enabled, tune threshold on dev to reach target precision (among positives)
+        if dyn_cfg is not None:
+            # Run a forward pass on dev to collect logits & labels
+            y_true_tmp: List[int] = []
+            logits_tmp: List[torch.Tensor] = []
+            model.eval()
+            for batch in dev_dl:
+                batch = {k: v.to(config.device) for k, v in batch.items()}
+                out = model(**batch)
+                logits_tmp.append(out.logits.detach().cpu())
+                y_true_tmp.extend(batch["labels"].detach().cpu().tolist())
+
+            logits_cat = torch.cat(logits_tmp, dim=0)
+            probs = torch.softmax(logits_cat, dim=-1)
+            no_id = int(label2id.get("NoRelation", 0))
+
+            target_p = float(run_cfg.get("dyn_filter_target_precision") or 0.85)
+            min_thr = float(run_cfg.get("dyn_filter_min_threshold") or 0.0)
+            max_thr = float(run_cfg.get("dyn_filter_max_threshold") or 0.99)
+            steps = int(run_cfg.get("dyn_filter_num_steps") or 50)
+
+            best_thr = min_thr
+            # Search increasing threshold until reaching target precision; otherwise take max_thr.
+            for i in range(steps + 1):
+                thr = min_thr + (max_thr - min_thr) * (i / max(1, steps))
+                prec = _compute_precision_for_threshold(
+                    y_true_tmp,
+                    probs,
+                    no_relation_id=no_id,
+                    threshold=thr,
+                    forbidden_pos_ids=forbidden_pos_ids,
+                )
+                if prec >= target_p:
+                    best_thr = thr
+                    break
+                best_thr = thr
+
+            dyn_threshold = float(best_thr)
+            dyn_cfg["threshold"] = dyn_threshold
+            logger.info("Dynamic threshold tuned on dev: thr=%.4f (target_prec=%.3f)", dyn_threshold, target_p)
+
+        dev_loss, dev_m, dev_per_cls, dev_conf, dev_filter_stats = evaluate(
+            model,
+            dev_dl,
+            config.device,
+            positive_ids=positive_ids,
+            confusion_label_ids=positive_ids,
+            dyn_filter=dyn_cfg,
+        )
+        test_loss, test_m, test_per_cls, _, test_filter_stats = evaluate(
+            model,
+            test_dl,
+            config.device,
+            positive_ids=positive_ids,
+            dyn_filter=dyn_cfg,
+        )
 
         logger.info(
             "Epoch %d/%d | train_loss=%.6f | dev_loss=%.6f | dev_micro_p=%.4f dev_micro_r=%.4f dev_micro_f1=%.4f (pos_support=%d)",
@@ -371,8 +684,36 @@ def main() -> int:
         except Exception:
             pass
 
+        # Confusion summary for gold Attribute_of (why F1 can be 0)
+        try:
+            if dev_conf is not None:
+                # Find label id for Attribute_of if present
+                attr_id = label2id.get("Attribute_of")
+                if attr_id is not None and attr_id in dev_conf:
+                    total = sum(dev_conf[attr_id].values())
+                    if total > 0:
+                        # show top predictions
+                        pairs = sorted(dev_conf[attr_id].items(), key=lambda x: (-x[1], x[0]))
+                        top = []
+                        for pid, cnt in pairs[:10]:
+                            top.append(f"{id2label.get(pid, str(pid))}={cnt}")
+                        logger.info(
+                            "Dev confusion (gold=Attribute_of, n=%d): %s",
+                            total,
+                            ", ".join(top),
+                        )
+        except Exception:
+            pass
+
         # Also log test for paper reporting (do NOT select best by test)
         try:
+            if test_filter_stats is not None:
+                logger.info(
+                    "Test filter stats: thr=%.4f low_conf=%d forbidden=%d",
+                    float(dyn_threshold),
+                    int(test_filter_stats.get("filtered_low_conf", 0)),
+                    int(test_filter_stats.get("filtered_forbidden", 0)),
+                )
             logger.info(
                 "Test: loss=%.6f | micro_p=%.4f micro_r=%.4f micro_f1=%.4f (pos_support=%d)",
                 test_loss,
@@ -387,30 +728,53 @@ def main() -> int:
         if dev_m.f1 > best_f1:
             best_f1 = dev_m.f1
             best_test_m = test_m
-            ckpt = {
-                # Save only the model weights (includes classifier) to minimize disk usage.
-                "model_state_dict": model.state_dict(),
-                "label2id": label2id,
-                "id2label": id2label,
-                "bert_model": config.bert_model,
-                "max_length": config.max_length,
-            }
-            try:
-                _atomic_torch_save(ckpt, best_path, retries=1)
-                logger.info("Saved best checkpoint: %s (best_f1=%.4f)", best_path, best_f1)
-            except Exception as e:
-                # Fallback: save only the classifier head
+
+            # To keep disk usage low, by default only save lightweight artifacts.
+            # Full BERT checkpoints can be hundreds of MB per run.
+            if _should_save_full_ckpt():
+                ckpt = {
+                    "model_state_dict": model.state_dict(),
+                    "label2id": label2id,
+                    "id2label": id2label,
+                    "bert_model": config.bert_model,
+                    "max_length": config.max_length,
+                }
+                try:
+                    _atomic_torch_save(ckpt, best_path, retries=1)
+                    logger.info("Saved best checkpoint: %s (best_f1=%.4f)", best_path, best_f1)
+                except Exception as e:
+                    # Fallback: save only the classifier head
+                    try:
+                        head_only = {
+                            "classifier": model.classifier.state_dict() if hasattr(model, "classifier") else None,
+                            "label2id": label2id,
+                            "id2label": id2label,
+                            "note": f"full checkpoint save failed: {type(e).__name__}: {e}",
+                        }
+                        _atomic_torch_save(head_only, best_path + ".head_only.pt", retries=1)
+                        logger.exception("Failed to save full checkpoint to %s; saved head-only fallback.", best_path)
+                    except Exception:
+                        logger.exception("Failed to save checkpoint artifacts.")
+            else:
+                # Lightweight default: save only classification head + metadata.
+                # This is sufficient for paper reporting and comparison experiments.
                 try:
                     head_only = {
                         "classifier": model.classifier.state_dict() if hasattr(model, "classifier") else None,
                         "label2id": label2id,
                         "id2label": id2label,
-                        "note": f"full checkpoint save failed: {type(e).__name__}: {e}",
+                        "bert_model": config.bert_model,
+                        "max_length": config.max_length,
+                        "note": "lightweight checkpoint (classifier head only). Set BERT_RE_SAVE_FULL_CKPT=1 to save full model.",
                     }
                     _atomic_torch_save(head_only, best_path + ".head_only.pt", retries=1)
-                    logger.exception("Failed to save full checkpoint to %s; saved head-only fallback.", best_path)
+                    logger.info(
+                        "Saved best lightweight checkpoint: %s (best_f1=%.4f)",
+                        best_path + ".head_only.pt",
+                        best_f1,
+                    )
                 except Exception:
-                    logger.exception("Failed to save checkpoint artifacts.")
+                    logger.exception("Failed to save lightweight checkpoint artifacts.")
 
     if best_test_m is not None:
         try:

@@ -1,0 +1,84 @@
+2026-03-23 19:57:55,531 - INFO - === BERT-RE pair classification ===
+2026-03-23 19:57:55,531 - INFO - train_file=/root/msy/ner/BERT-RE/admin-ree.jsonl
+2026-03-23 19:57:55,531 - INFO - bert_model=/root/msy/ner/BERT-CRF/pretrained_bert_models/chinese_roberta_wwm_large_ext
+2026-03-23 19:57:55,531 - INFO - exp_dir=/root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/dynfilter_seed21_splitsentence_r-1_tp0.85
+2026-03-23 19:57:55,531 - INFO - seed=21 split_level=sentence neg_pos_ratio=-1.0
+2026-03-23 19:57:55,541 - INFO - Built pair samples: 4062
+2026-03-23 19:57:55,542 - INFO - Label distribution (raw): {'Condition': 185, 'NoRelation': 3594, 'Trigger': 170, 'Attribute_of': 113}
+2026-03-23 19:57:55,542 - INFO - Neg downsampling applied: neg_pos_ratio=-1.0 | train size 3324 -> 3324 | before={'Condition': 148, 'NoRelation': 2946, 'Trigger': 135, 'Attribute_of': 95} | after={'Condition': 148, 'NoRelation': 2946, 'Trigger': 135, 'Attribute_of': 95}
+2026-03-23 19:57:55,542 - INFO - Split: train=3324 dev=350 test=388 | split_level=sentence
+2026-03-23 19:57:55,543 - INFO - Label distribution (train after neg-sampling): {'Condition': 148, 'NoRelation': 2946, 'Trigger': 135, 'Attribute_of': 95}
+2026-03-23 19:57:55,543 - INFO - Label distribution (dev): {'Condition': 19, 'NoRelation': 305, 'Trigger': 16, 'Attribute_of': 10}
+2026-03-23 19:57:55,543 - INFO - Label distribution (test): {'Condition': 18, 'NoRelation': 343, 'Trigger': 19, 'Attribute_of': 8}
+2026-03-23 19:57:55,543 - INFO - Labels: {'NoRelation': 0, 'Attribute_of': 1, 'Condition': 2, 'Trigger': 3}
+2026-03-23 19:57:55,543 - INFO - Dynamic filter enabled: target_prec=0.850 steps=50 thr_range=[0.00, 0.99], forbidden=[]
+2026-03-23 19:57:55,552 - INFO - Marker token ids: [HEAD]=21128, [TAIL]=21130
+The new embeddings will be initialized from a multivariate normal distribution that has old embeddings' mean and covariance. As described in this article: https://nlp.stanford.edu/~johnhew/vocab-expansion.html. To disable this, use `mean_resizing=False`
+2026-03-23 19:58:27,659 - INFO - Dynamic threshold tuned on dev: thr=0.6138 (target_prec=0.850)
+2026-03-23 19:58:28,767 - INFO - Epoch 1/10 | train_loss=0.496875 | dev_loss=0.443235 | dev_micro_p=1.0000 dev_micro_r=0.0444 dev_micro_f1=0.0851 (pos_support=45)
+2026-03-23 19:58:28,767 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=10) | Condition:P=1.000 R=0.105 F1=0.190 (sup=19) | Trigger:P=0.000 R=0.000 F1=0.000 (sup=16)
+2026-03-23 19:58:28,767 - INFO - Dev confusion (gold=Attribute_of, n=10): NoRelation=10
+2026-03-23 19:58:28,767 - INFO - Test filter stats: thr=0.6138 low_conf=12 forbidden=0
+2026-03-23 19:58:28,767 - INFO - Test: loss=0.409668 | micro_p=0.6000 micro_r=0.0667 micro_f1=0.1200 (pos_support=45)
+2026-03-23 19:58:28,768 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/dynfilter_seed21_splitsentence_r-1_tp0.85/best.pt.head_only.pt (best_f1=0.0851)
+2026-03-23 19:58:55,337 - INFO - Dynamic threshold tuned on dev: thr=0.4950 (target_prec=0.850)
+2026-03-23 19:58:56,440 - INFO - Epoch 2/10 | train_loss=0.417146 | dev_loss=0.449561 | dev_micro_p=1.0000 dev_micro_r=0.0889 dev_micro_f1=0.1633 (pos_support=45)
+2026-03-23 19:58:56,441 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=10) | Condition:P=0.000 R=0.000 F1=0.000 (sup=19) | Trigger:P=1.000 R=0.250 F1=0.400 (sup=16)
+2026-03-23 19:58:56,441 - INFO - Dev confusion (gold=Attribute_of, n=10): NoRelation=10
+2026-03-23 19:58:56,441 - INFO - Test filter stats: thr=0.4950 low_conf=1 forbidden=0
+2026-03-23 19:58:56,441 - INFO - Test: loss=0.401835 | micro_p=0.8333 micro_r=0.1111 micro_f1=0.1961 (pos_support=45)
+2026-03-23 19:58:56,441 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/dynfilter_seed21_splitsentence_r-1_tp0.85/best.pt.head_only.pt (best_f1=0.1633)
+2026-03-23 19:59:23,472 - INFO - Dynamic threshold tuned on dev: thr=0.7326 (target_prec=0.850)
+2026-03-23 19:59:24,586 - INFO - Epoch 3/10 | train_loss=0.384235 | dev_loss=0.401752 | dev_micro_p=1.0000 dev_micro_r=0.0444 dev_micro_f1=0.0851 (pos_support=45)
+2026-03-23 19:59:24,586 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=10) | Condition:P=0.000 R=0.000 F1=0.000 (sup=19) | Trigger:P=1.000 R=0.125 F1=0.222 (sup=16)
+2026-03-23 19:59:24,586 - INFO - Dev confusion (gold=Attribute_of, n=10): NoRelation=10
+2026-03-23 19:59:24,586 - INFO - Test filter stats: thr=0.7326 low_conf=6 forbidden=0
+2026-03-23 19:59:24,586 - INFO - Test: loss=0.376618 | micro_p=0.8333 micro_r=0.1111 micro_f1=0.1961 (pos_support=45)
+2026-03-23 19:59:51,804 - INFO - Dynamic threshold tuned on dev: thr=0.5148 (target_prec=0.850)
+2026-03-23 19:59:52,919 - INFO - Epoch 4/10 | train_loss=0.330218 | dev_loss=0.445901 | dev_micro_p=1.0000 dev_micro_r=0.1111 dev_micro_f1=0.2000 (pos_support=45)
+2026-03-23 19:59:52,920 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=10) | Condition:P=1.000 R=0.053 F1=0.100 (sup=19) | Trigger:P=1.000 R=0.250 F1=0.400 (sup=16)
+2026-03-23 19:59:52,920 - INFO - Dev confusion (gold=Attribute_of, n=10): NoRelation=10
+2026-03-23 19:59:52,920 - INFO - Test filter stats: thr=0.5148 low_conf=0 forbidden=0
+2026-03-23 19:59:52,920 - INFO - Test: loss=0.397177 | micro_p=0.7692 micro_r=0.2222 micro_f1=0.3448 (pos_support=45)
+2026-03-23 19:59:52,921 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/dynfilter_seed21_splitsentence_r-1_tp0.85/best.pt.head_only.pt (best_f1=0.2000)
+2026-03-23 20:00:20,652 - INFO - Dynamic threshold tuned on dev: thr=0.8514 (target_prec=0.850)
+2026-03-23 20:00:21,781 - INFO - Epoch 5/10 | train_loss=0.316641 | dev_loss=0.417152 | dev_micro_p=0.8667 dev_micro_r=0.2889 dev_micro_f1=0.4333 (pos_support=45)
+2026-03-23 20:00:21,781 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=10) | Condition:P=0.778 R=0.368 F1=0.500 (sup=19) | Trigger:P=1.000 R=0.375 F1=0.545 (sup=16)
+2026-03-23 20:00:21,781 - INFO - Dev confusion (gold=Attribute_of, n=10): NoRelation=10
+2026-03-23 20:00:21,781 - INFO - Test filter stats: thr=0.8514 low_conf=25 forbidden=0
+2026-03-23 20:00:21,781 - INFO - Test: loss=0.409818 | micro_p=0.7391 micro_r=0.3864 micro_f1=0.5075 (pos_support=44)
+2026-03-23 20:00:21,782 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/dynfilter_seed21_splitsentence_r-1_tp0.85/best.pt.head_only.pt (best_f1=0.4333)
+2026-03-23 20:00:49,118 - INFO - Dynamic threshold tuned on dev: thr=0.8514 (target_prec=0.850)
+2026-03-23 20:00:50,243 - INFO - Epoch 6/10 | train_loss=0.303460 | dev_loss=0.320127 | dev_micro_p=0.9000 dev_micro_r=0.2000 dev_micro_f1=0.3273 (pos_support=45)
+2026-03-23 20:00:50,244 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=10) | Condition:P=0.875 R=0.368 F1=0.519 (sup=19) | Trigger:P=1.000 R=0.125 F1=0.222 (sup=16)
+2026-03-23 20:00:50,244 - INFO - Dev confusion (gold=Attribute_of, n=10): NoRelation=10
+2026-03-23 20:00:50,244 - INFO - Test filter stats: thr=0.8514 low_conf=16 forbidden=0
+2026-03-23 20:00:50,244 - INFO - Test: loss=0.337645 | micro_p=1.0000 micro_r=0.2222 micro_f1=0.3636 (pos_support=45)
+2026-03-23 20:01:17,901 - INFO - Dynamic threshold tuned on dev: thr=0.6930 (target_prec=0.850)
+2026-03-23 20:01:19,030 - INFO - Epoch 7/10 | train_loss=0.278374 | dev_loss=0.316720 | dev_micro_p=0.9333 dev_micro_r=0.3182 dev_micro_f1=0.4746 (pos_support=44)
+2026-03-23 20:01:19,031 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=10) | Condition:P=1.000 R=0.368 F1=0.538 (sup=19) | Trigger:P=0.875 R=0.438 F1=0.583 (sup=16)
+2026-03-23 20:01:19,031 - INFO - Dev confusion (gold=Attribute_of, n=10): NoRelation=10
+2026-03-23 20:01:19,031 - INFO - Test filter stats: thr=0.6930 low_conf=6 forbidden=0
+2026-03-23 20:01:19,031 - INFO - Test: loss=0.289364 | micro_p=0.9444 micro_r=0.3778 micro_f1=0.5397 (pos_support=45)
+2026-03-23 20:01:19,032 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/dynfilter_seed21_splitsentence_r-1_tp0.85/best.pt.head_only.pt (best_f1=0.4746)
+2026-03-23 20:01:46,540 - INFO - Dynamic threshold tuned on dev: thr=0.8316 (target_prec=0.850)
+2026-03-23 20:01:47,665 - INFO - Epoch 8/10 | train_loss=0.250698 | dev_loss=0.348626 | dev_micro_p=0.8636 dev_micro_r=0.4222 dev_micro_f1=0.5672 (pos_support=45)
+2026-03-23 20:01:47,666 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=10) | Condition:P=0.833 R=0.526 F1=0.645 (sup=19) | Trigger:P=0.900 R=0.562 F1=0.692 (sup=16)
+2026-03-23 20:01:47,666 - INFO - Dev confusion (gold=Attribute_of, n=10): NoRelation=10
+2026-03-23 20:01:47,666 - INFO - Test filter stats: thr=0.8316 low_conf=14 forbidden=0
+2026-03-23 20:01:47,666 - INFO - Test: loss=0.331240 | micro_p=0.9500 micro_r=0.4222 micro_f1=0.5846 (pos_support=45)
+2026-03-23 20:01:47,666 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/dynfilter_seed21_splitsentence_r-1_tp0.85/best.pt.head_only.pt (best_f1=0.5672)
+2026-03-23 20:02:15,737 - INFO - Dynamic threshold tuned on dev: thr=0.6336 (target_prec=0.850)
+2026-03-23 20:02:16,864 - INFO - Epoch 9/10 | train_loss=0.231495 | dev_loss=0.303641 | dev_micro_p=0.8800 dev_micro_r=0.5000 dev_micro_f1=0.6377 (pos_support=44)
+2026-03-23 20:02:16,865 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=10) | Condition:P=0.923 R=0.632 F1=0.750 (sup=19) | Trigger:P=0.833 R=0.625 F1=0.714 (sup=16)
+2026-03-23 20:02:16,865 - INFO - Dev confusion (gold=Attribute_of, n=10): NoRelation=10
+2026-03-23 20:02:16,865 - INFO - Test filter stats: thr=0.6336 low_conf=6 forbidden=0
+2026-03-23 20:02:16,865 - INFO - Test: loss=0.301490 | micro_p=0.9130 micro_r=0.4667 micro_f1=0.6176 (pos_support=45)
+2026-03-23 20:02:16,865 - INFO - Saved best lightweight checkpoint: /root/msy/ner/BERT-RE/experiments/_ablation_dynfilter_adminree_r-1/dynfilter_seed21_splitsentence_r-1_tp0.85/best.pt.head_only.pt (best_f1=0.6377)
+2026-03-23 20:02:44,704 - INFO - Dynamic threshold tuned on dev: thr=0.5346 (target_prec=0.850)
+2026-03-23 20:02:45,839 - INFO - Epoch 10/10 | train_loss=0.209515 | dev_loss=0.305169 | dev_micro_p=0.8750 dev_micro_r=0.4667 dev_micro_f1=0.6087 (pos_support=45)
+2026-03-23 20:02:45,839 - INFO - Dev per-class (pos only): Attribute_of:P=0.000 R=0.000 F1=0.000 (sup=10) | Condition:P=0.857 R=0.632 F1=0.727 (sup=19) | Trigger:P=0.900 R=0.562 F1=0.692 (sup=16)
+2026-03-23 20:02:45,839 - INFO - Dev confusion (gold=Attribute_of, n=10): NoRelation=10
+2026-03-23 20:02:45,839 - INFO - Test filter stats: thr=0.5346 low_conf=2 forbidden=0
+2026-03-23 20:02:45,840 - INFO - Test: loss=0.316205 | micro_p=0.8800 micro_r=0.4889 micro_f1=0.6286 (pos_support=45)
+2026-03-23 20:02:45,840 - INFO - Training done. Best dev micro-F1=0.6377 | corresponding test micro-F1=0.6176 (P=0.9130 R=0.4667, pos_support=45)

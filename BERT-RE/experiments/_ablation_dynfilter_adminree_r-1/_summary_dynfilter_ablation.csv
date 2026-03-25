@@ -1,0 +1,11 @@
+run_dir,group,seed,dev_f1,test_f1,test_p,test_r,pos_support,dyn_target_prec
+dynfilter_seed123_splitsentence_r-1_tp0.85,dynfilter,123,0.5882,0.507,0.75,0.383,47,0.85
+dynfilter_seed13_splitsentence_r-1_tp0.85,dynfilter,13,0.6984,0.6316,0.8182,0.5143,35,0.85
+dynfilter_seed21_splitsentence_r-1_tp0.85,dynfilter,21,0.6377,0.6176,0.913,0.4667,45,0.85
+dynfilter_seed42_splitsentence_r-1_tp0.85,dynfilter,42,0.6452,0.7654,0.8857,0.6739,46,0.85
+dynfilter_seed87_splitsentence_r-1_tp0.85,dynfilter,87,0.339,0.2692,0.7,0.1667,42,0.85
+nofilter_seed123_splitsentence_r-1,nofilter,123,0.5934,0.5758,1.0,0.4043,47,
+nofilter_seed13_splitsentence_r-1,nofilter,13,0.6866,0.6032,0.6786,0.5429,35,
+nofilter_seed21_splitsentence_r-1,nofilter,21,0.6494,0.6133,0.7667,0.5111,45,
+nofilter_seed42_splitsentence_r-1,nofilter,42,0.6452,0.7436,0.9062,0.6304,46,
+nofilter_seed87_splitsentence_r-1,nofilter,87,0.5806,0.4444,0.5161,0.3902,41,
