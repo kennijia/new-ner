@@ -1,0 +1,8 @@
+# qa_system artifacts
+artifacts/
+outputs/
+*.bin
+*.gpickle
+*.pkl
+*.npz
+.env
