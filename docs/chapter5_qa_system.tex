@@ -1,0 +1,238 @@
+% Chapter 5 LaTeX draft (reproducible engineering + explainable cases)
+% Date: 2026-03-31
+
+\chapter{因果知识增强的水资源调度问答系统（\texttt{qa\_system}）}
+\label{chap:qa_system}
+
+本章在前述命名实体识别（第三章）与因果关系抽取（第四章）的基础上，构建一个\textbf{可落地、可复现、可解释}的水资源调度法规问答系统。系统以自然语言问题为输入，通过\textbf{向量语义检索（Text channel）}与\textbf{因果知识图谱多跳检索（Graph channel）}两路证据召回，并在统一评分与融合排序后生成带证据编号的提示词（Prompt）。在此基础上，可进一步接入 OpenAI-compatible 大模型接口输出\textbf{结构化 JSON 答案}，从而实现结果可核验、证据可追溯。
+
+本章贡献主要体现在三点：
+\begin{enumerate}
+  \item \textbf{可复现工程闭环：}给出从 RE 数据到因果图谱工件、从评测问题集到批量运行与指标表格生成的全流程。
+  \item \textbf{图谱检索链路工程化与鲁棒性：}以 \texttt{MultiDiGraph} 形式固化因果边，避免多重边遍历时的结构不一致问题，并将图谱/索引工件集中管理。
+  \item \textbf{可解释性：}输出的证据以 \texttt{[T\#..]}（文本证据）与 \texttt{[P\#..]}（因果路径）编号，答案必须引用证据编号；同时通过案例验证图谱证据在融合排序中的前移行为。
+\end{enumerate}
+
+\section{问题定义与系统边界}
+\label{sec:qa_problem}
+
+给定用户自然语言问题 $q$，系统的目标是返回答案结论 $a$，并提供可追溯证据集合 $E$。其中证据由两类组成：
+\begin{itemize}
+  \item \textbf{文本证据} $E_T$：由向量检索召回的法规片段（或条文段落）。
+  \item \textbf{图谱证据} $E_G$：在因果知识图谱上检索到的多跳因果路径（由若干因果边组成）。
+\end{itemize}
+
+系统边界如下：
+\begin{itemize}
+  \item \textbf{检索闭环可独立复现：}本章的主评测以 \texttt{qa\_system/run\_qa.py} 与 \texttt{qa\_system/run\_eval.py} 为入口，仅执行“检索$\rightarrow$融合$\rightarrow$Prompt输出”，不依赖在线大模型调用，保证在无 API Key 环境下复现实验结果。
+  \item \textbf{生成回答作为可选增强：}若配置 \texttt{.env} 中的 OpenAI-compatible 参数，可通过 \texttt{qa\_system/run\_qa\_answer.py} 输出结构化 JSON 答案；该能力用于演示与案例，不作为本章核心可复现指标的前提。
+\end{itemize}
+
+\section{因果知识图谱构建与工件化管理}
+\label{sec:kg_build}
+
+\subsection{数据来源与因果三元组}
+\label{subsec:kg_data}
+
+本章因果知识来源于第四章构建的关系抽取（RE）数据集 \texttt{/root/msy/ner/BERT-RE/admin-ree.jsonl}。每条样本包含文本片段、实体/事件短语及关系标签。为服务问答场景中的因果推理，本章仅保留与因果相关的关系，并将关系做统一映射：\texttt{Trigger}$\rightarrow$“触发”，\texttt{Cause/Causes}$\rightarrow$“导致”；对 \texttt{Condition} 等非因果关系默认跳过。
+
+\subsection{三元组清洗与图结构落盘}
+\label{subsec:kg_artifacts}
+
+为提升实验可复现性与工程可维护性，本章提供 RE$\rightarrow$KG 的一键构建脚本 \texttt{qa\_system/build\_kg\_from\_re.py}，其输入为上一节数据文件，输出为统一工件目录 \texttt{qa\_system/artifacts/} 下的两类工件：
+\begin{itemize}
+  \item \textbf{清洗后的三元组文件}：\texttt{triples\_clean.jsonl}，字段包含 \texttt{cause / relation / effect / confidence} 等；
+  \item \textbf{NetworkX 图谱序列化文件}：\texttt{nx\_graph.gpickle}。
+\end{itemize}
+
+实现上，图谱被固化为 \texttt{networkx.MultiDiGraph}。该设计的动机是：同一对节点之间可能存在多个证据来源或不同置信度的因果边（多重边），而后续图谱检索模块（复用 \texttt{BERT-LSTM-CRF/causal\_dual\_retrieval.py}）在遍历边时按多重边结构读取边属性（如 \texttt{confidence/weight}）。若图结构退化为 \texttt{DiGraph}，则边属性的读取会出现结构不一致，从而触发运行时错误。通过在构建阶段强制 \texttt{MultiDiGraph} 并写入 \texttt{weight/confidence} 字段，可保证检索链路一致性。
+
+\subsection{工件目录规范与默认配置}
+\label{subsec:artifact_layout}
+
+本章将图谱与向量索引统一集中到 \texttt{qa\_system/artifacts/}，并在 \texttt{qa\_system/config.py} 中提供默认路径（\texttt{artifacts\_dir}）。因此在运行问答或评测脚本时，通常无需额外传入 \texttt{--graph/--index/--meta} 参数即可复现实验。
+
+\section{问答系统架构与端到端流水线}
+\label{sec:qa_arch}
+
+\subsection{工程入口与模块划分}
+\label{subsec:entrypoints}
+
+为同时满足论文复现实验与工程扩展性，本章实现以下脚本与模块：
+\begin{itemize}
+  \item \texttt{qa\_system/run\_qa.py}：单问运行，输出双通道检索结果、融合证据与 Prompt（不调用 LLM）。
+  \item \texttt{qa\_system/run\_qa\_answer.py}：在上述基础上调用 OpenAI-compatible LLM，并输出结构化 JSON 答案（可选）。
+  \item \texttt{qa\_system/pipeline.py}：端到端流水线封装（加载图谱、FAISS 检索、路径检索、融合与 Prompt 构造）。
+  \item \texttt{qa\_system/answering.py}：结构化 JSON 输出约束与证据编号校验。
+  \item \texttt{qa\_system/run\_eval.py}：批量评测脚本，支持 \texttt{text/graph/dual\_concat/fusion} 四种模式。
+  \item \texttt{qa\_system/summarize\_eval.py}：从批量运行结果生成指标 CSV，并导出 LaTeX 表格。
+\end{itemize}
+
+\subsection{双通道检索：向量语义检索与图谱多跳路径检索}
+\label{subsec:dual_retrieval}
+
+系统通过两路证据召回提升覆盖率与可解释性：
+\begin{enumerate}
+  \item \textbf{向量语义检索（Text channel）}：使用 embedding 模型将问题与条文片段编码为向量，并利用 FAISS 索引检索 Top-$k_T$ 文本证据。该部分产出 \texttt{[T\#..]} 编号证据。
+  \item \textbf{因果图谱检索（Graph channel）}：在因果知识图谱上，以问题文本（可选 NER 提取的实体锚点）为线索检索多跳路径，限制关系集合为 \{触发, 导致\}，并返回 Top-$k_G$ 条路径。该部分产出 \texttt{[P\#..]} 编号路径证据。
+\end{enumerate}
+
+核心检索参数在 \texttt{qa\_system/config.py} 中统一配置：\texttt{top\_text\_k, top\_path\_k, max\_hops, allowed\_relations}。
+
+\section{证据融合排序与结构化输出约束}
+\label{sec:fusion_and_control}
+
+\subsection{异构证据统一评分与融合策略}
+\label{subsec:fusion}
+
+两路证据在语义空间与结构空间的打分口径不同：文本证据得分来自向量相似度（可归一化到 $[0,1]$），路径证据得分来自路径置信度（由路径上边的 \texttt{confidence/weight} 聚合得到）。本章采用线性加权的统一打分进行融合排序：
+\begin{equation}
+  s(e)=\alpha\cdot \hat{s}_T(e) + \beta\cdot s_G(e),\quad \alpha+\beta=1,
+\end{equation}
+其中 $\hat{s}_T$ 为归一化文本相似度，$s_G$ 为路径置信度；若证据并非来自某一通道，则该通道得分记为 0。融合超参数 $(\alpha,\beta)$ 在 \texttt{config.py} 中给出默认值（例如 $\alpha=0.45, \beta=0.55$）。
+
+为对比融合是否真正改善“图谱证据进入有效上下文”的能力，本章设置四种策略：
+\begin{itemize}
+  \item \textbf{Text-only}：仅向量检索；
+  \item \textbf{Graph-only}：仅图谱路径检索；
+  \item \textbf{Dual-concat}：双通道召回但不重排（简单拼接）；
+  \item \textbf{Fusion (ours)}：双通道召回并按统一得分融合排序（本文方法）。
+\end{itemize}
+
+\subsection{Prompt 组织与证据编号机制}
+\label{subsec:prompt}
+
+系统将 Top-$K$ 证据组织为 Prompt，上下文包含两部分：文本证据段与图谱因果路径段，并以编号显式标注：
+\begin{itemize}
+  \item 文本证据：\texttt{[T\#id]}，附带相似度分数与原文片段；
+  \item 因果路径：\texttt{[P\#path\_id]}，附带路径置信度与自然语言逻辑链描述。
+\end{itemize}
+
+该编号机制保证了后续生成答案时可强制引用证据，从而实现可核验性。
+
+\subsection{分层约束的结构化输出与校验}
+\label{subsec:structured_answer}
+
+在可选的生成阶段，本章通过 \texttt{qa\_system/answering.py} 对大模型输出施加严格约束：模型必须仅输出一个 JSON 对象，至少包含 \texttt{conclusion}（结论）、\texttt{evidence\_ids}（证据编号列表）、\texttt{causal\_chain}（若使用路径则复述因果链）。系统对 \texttt{evidence\_ids} 做合法性校验，确保其必须来自给定 Prompt 中的 \texttt{[T\#..]/[P\#..]}，从而避免“无证据引用”或“编造证据编号”。
+
+\section{可复现实验流程与对比设置}
+\label{sec:repro_protocol}
+
+\subsection{评测问题集构建}
+\label{subsec:evalset}
+
+为覆盖不同提问方式，本章构建 30 条评测问题集 \texttt{qa\_system/eval\_questions.jsonl}，并按照问题类型分组：\texttt{entity/paraphrase/general} 各 10 条。
+
+\subsection{批量运行与指标统计}
+\label{subsec:batch_eval}
+
+实验流程严格按以下步骤执行：
+\begin{enumerate}
+  \item \textbf{批量运行}：调用 \texttt{qa\_system/run\_eval.py}，分别以 \texttt{text/graph/dual\_concat/fusion} 四种模式对问题集进行批量推理，输出 \texttt{qa\_system/outputs/eval\_*.jsonl}。
+  \item \textbf{统计指标}：调用 \texttt{qa\_system/summarize\_eval.py}，生成整体指标 \texttt{metrics\_summary.csv} 与分类型指标 \texttt{metrics\_by\_type.csv}，并导出可直接插入论文的表格文件 \texttt{qa\_system/outputs/metrics\_tables.tex}。
+  \item \textbf{抽样案例}：从 \texttt{eval\_fusion.jsonl} 中抽取代表性样例生成 \texttt{case\_cards.md}，用于本章案例分析。
+\end{enumerate}
+
+\subsection{评价指标定义}
+\label{subsec:metrics}
+
+为刻画“图谱是否真正进入有效上下文”这一目标，本章除常规命中率外，引入两项证据结构相关指标：
+\begin{itemize}
+  \item \textbf{EntHit}：问题中可用于图谱检索的实体/锚点命中比例。
+  \item \textbf{PathHit}：是否检索到至少一条有效因果路径的比例。
+  \item \textbf{AvgPaths/AvgConf}：每问平均返回路径数量与平均路径置信度。
+  \item \textbf{TextTop1/Top1Graph}：融合/排序后 Top-1 证据来自文本/图谱的比例。
+  \item \textbf{Top5GraphShare}：Top-5 证据中图谱证据占比的均值（衡量图谱证据在有效上下文中的渗透程度）。
+\end{itemize}
+
+\section{实验结果与分析}
+\label{sec:results}
+
+\subsection{整体对比结果}
+\label{subsec:overall_results}
+
+表~\ref{tab:qa_overall_metrics} 给出四种策略在 30 条问题上的整体对比结果。\texttt{Graph-only} 与 \texttt{Dual-concat} 的 \textbf{PathHit} 均为 0.467，表明在当前评测集中，约 46.7\% 的问题可以在因果图谱中检索到有效多跳路径；而 \texttt{Text-only} 的 \textbf{PathHit} 为 0，符合其不使用图谱检索的设置。
+
+更关键的是证据结构指标：\texttt{Dual-concat} 的 \textbf{Top1Graph} 与 \textbf{Top5GraphShare} 均为 0，说明简单拼接不会让图谱证据稳定进入 Top-$K$ 上下文；相比之下，\texttt{Fusion (ours)} 的 \textbf{Top1Graph} 达到 0.467，\textbf{Top5GraphShare} 达到 0.440，表明融合排序能显著提升图谱证据的前移比例。
+
+% ====== Begin: embedded tables (from qa_system/outputs/metrics_tables.tex) ======
+% Recommended packages (in main preamble):
+% \usepackage{booktabs}
+% \usepackage{siunitx}
+% \sisetup{round-mode=places,round-precision=3}
+
+\begin{table}[t]
+  \centering
+  \caption{不同检索策略的整体指标对比（$n=30$）。\textbf{PathHit} 表示图谱路径命中率，\textbf{Top1Graph} 表示融合/排序后Top-1证据来自图谱的比例，\textbf{Top5GraphShare} 表示Top-5证据中图谱占比均值。}
+  \label{tab:qa_overall_metrics}
+  \begin{tabular}{l S[table-format=2.0] S[table-format=1.3] S[table-format=1.3] S[table-format=1.1] S[table-format=1.3] S[table-format=1.3] S[table-format=1.3] S[table-format=1.3]}
+    \toprule
+    {方法} & {$n$} & {EntHit} & {PathHit} & {AvgPaths} & {AvgConf} & {TextTop1} & {Top1Graph} & {Top5GraphShare} \\
+    \midrule
+    Text-only        & 30 & 0.000 & 0.000 & 0.0 & 0.000 & 0.773 & 0.000 & 0.000 \\
+    Graph-only       & 30 & 0.767 & 0.467 & 2.2 & 0.902 & 0.000 & 0.000 & 1.000 \\
+    Dual-concat      & 30 & 0.767 & 0.467 & 2.2 & 0.902 & 0.773 & 0.000 & 0.000 \\
+    Fusion (ours)    & 30 & 0.767 & 0.467 & 2.2 & 0.902 & 0.773 & 0.467 & 0.440 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \caption{按问题类型划分的指标（每类$n=10$）。Fusion 在 paraphrase 类问题上具有更高的图谱证据前移比例（Top1Graph/Top5GraphShare）。}
+  \label{tab:qa_metrics_by_type}
+  \begin{tabular}{l l S[table-format=2.0] S[table-format=1.3] S[table-format=1.3] S[table-format=1.1] S[table-format=1.3] S[table-format=1.3] S[table-format=1.3] S[table-format=1.3]}
+    \toprule
+    {方法} & {类型} & {$n$} & {EntHit} & {PathHit} & {AvgPaths} & {AvgConf} & {TextTop1} & {Top1Graph} & {Top5GraphShare} \\
+    \midrule
+    Text-only & entity     & 10 & 0.000 & 0.000 & 0.0 & 0.000 & 0.811 & 0.000 & 0.000 \\
+    Text-only & paraphrase & 10 & 0.000 & 0.000 & 0.0 & 0.000 & 0.822 & 0.000 & 0.000 \\
+    Text-only & general    & 10 & 0.000 & 0.000 & 0.0 & 0.000 & 0.686 & 0.000 & 0.000 \\
+    \addlinespace
+    Graph-only & entity     & 10 & 0.900 & 0.500 & 2.3 & 0.902 & 0.000 & 0.000 & 1.000 \\
+    Graph-only & paraphrase & 10 & 0.800 & 0.700 & 3.5 & 0.902 & 0.000 & 0.000 & 1.000 \\
+    Graph-only & general    & 10 & 0.600 & 0.200 & 0.8 & 0.902 & 0.000 & 0.000 & 1.000 \\
+    \addlinespace
+    Dual-concat & entity     & 10 & 0.900 & 0.500 & 2.3 & 0.902 & 0.811 & 0.000 & 0.000 \\
+    Dual-concat & paraphrase & 10 & 0.800 & 0.700 & 3.5 & 0.902 & 0.822 & 0.000 & 0.000 \\
+    Dual-concat & general    & 10 & 0.600 & 0.200 & 0.8 & 0.902 & 0.686 & 0.000 & 0.000 \\
+    \addlinespace
+    Fusion (ours) & entity     & 10 & 0.900 & 0.500 & 2.3 & 0.902 & 0.811 & 0.500 & 0.460 \\
+    Fusion (ours) & paraphrase & 10 & 0.800 & 0.700 & 3.5 & 0.902 & 0.822 & 0.700 & 0.700 \\
+    Fusion (ours) & general    & 10 & 0.600 & 0.200 & 0.8 & 0.902 & 0.686 & 0.200 & 0.160 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+% ====== End: embedded tables ======
+
+\subsection{分类型结果}
+\label{subsec:type_results}
+
+从表~\ref{tab:qa_metrics_by_type} 可观察到：在 paraphrase 类问题上，\texttt{Fusion (ours)} 的 \textbf{Top1Graph=0.700}、\textbf{Top5GraphShare=0.700}，显著高于 entity 与 general 类问题。该现象说明当问题措辞发生改写时，纯语义相似检索容易出现“相似但不因果”的召回偏移，而图谱因果链可提供更稳定的结构约束，使关键证据更容易进入有效上下文。
+
+\section{案例分析：可解释性与失败模式}
+\label{sec:case_study}
+
+本节从 \texttt{qa\_system/outputs/case\_cards.md} 中选取代表性样例，展示融合策略的可解释性与典型失败模式。为便于复核，案例均以证据编号 \texttt{[T\#..]/[P\#..]} 引用。
+
+\subsection{A1：图谱证据前移（Top-1 为图谱路径）}
+\label{subsec:case_A1}
+
+在 A1 类案例中，系统检索到高置信度因果路径，并在融合排序后将其提升至 Top-1。该类问题通常包含明确的触发条件与处置措施，图谱路径能以“条件$\rightarrow$动作$\rightarrow$结果”的形式串联关键条款，提升回答的因果一致性。对应样例可见 \texttt{case\_cards.md} 中的 \texttt{E001/E002/E003}。
+
+\subsection{A3：无路径命中（回退到文本证据）}
+\label{subsec:case_A3}
+
+A3 类案例表现为 \textbf{PathHit=0}：图谱中无法形成有效多跳链路，系统只能依赖向量检索返回的文本证据。该失败模式主要由两类原因导致：（1）图谱覆盖不足或抽取三元组稀疏，导致查询实体在图中孤立；（2）问题关键短语未能与图谱节点对齐（实体锚点缺失）。对应样例可见 \texttt{E004/E006/E007} 以及 \texttt{cases\_A3\_no\_graph\_paths.jsonl}。
+
+\subsection{关于 A2=0 的解释：命中路径但 Top-1 仍为文本的缺失}
+\label{subsec:case_A2}
+
+统计发现：在 \texttt{Fusion (ours)} 运行中不存在“已命中路径但 Top-1 证据仍为文本”的 A2 类样例。其原因在于本章融合策略对图谱证据采取\textbf{偏因果优先}的排序：当存在高置信度路径时，线性加权得分常使路径证据超过文本证据，从而使 \textbf{Top1Graph} 与 \textbf{PathHit} 在数量级上接近。
+
+该设计的优点是：在需要因果链路解释的法规问答中，优先提供结构化因果证据利于可解释与可追溯；潜在不足是：当图谱边覆盖不完整或路径仅“弱相关”时，可能出现对图谱证据的过度偏置。后续工作可通过自适应权重或基于一致性校验的重排机制缓解。
+
+\section{本章小结}
+\label{sec:qa_summary}
+
+本章实现了因果知识增强问答系统 \texttt{qa\_system}，并构建了可复现实验闭环：从 RE 数据构建因果图谱工件（\texttt{triples\_clean.jsonl}、\texttt{nx\_graph.gpickle}），到双通道检索与融合（\texttt{run\_eval.py}），再到指标统计与论文表格生成（\texttt{summarize\_eval.py} 生成 \texttt{metrics\_tables.tex}）。实验表明，简单拼接不会使图谱证据稳定进入有效上下文，而本文融合策略能显著提升 Top-1/Top-5 中图谱证据占比，并通过案例展示了可解释性与失败模式。

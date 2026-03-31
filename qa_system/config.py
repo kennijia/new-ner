@@ -20,16 +20,17 @@ class QAConfig:
     # --- Workspace paths ---
     workspace_root: Path = Path(__file__).resolve().parents[1]
 
+    artifacts_dir: Path = Path(__file__).resolve().parent / "artifacts"
+
     # --- Data artifacts (defaults follow the existing project conventions) ---
     admin_json: Path = Path("data/my/admin.json")
 
     # cleaned triples & networkx graph
-    triples_clean: Path = Path("data/my/kg/processed/triples_clean.jsonl")
-    nx_graph: Path = Path("data/my/kg/processed/nx_graph.gpickle")
-
+    triples_clean: Path = artifacts_dir / "triples_clean.jsonl"
+    nx_graph: Path = artifacts_dir / "nx_graph.gpickle"
     # vector index
-    faiss_index: Path = Path("data/my/kg/processed/faiss_index_qwen_sem.bin")
-    faiss_meta: Path = Path("data/my/kg/processed/faiss_meta_qwen_sem.json")
+    faiss_index: Path = artifacts_dir / "faiss_index_qwen_sem.bin"
+    faiss_meta: Path = artifacts_dir / "faiss_meta_qwen_sem.json"
     embedding_model: str = "/root/.cache/modelscope/hub/models/Qwen/Qwen3-Embedding-0___6B"
 
     # optional: third-chapter NER model dir (BERT-LSTM-CRF trained artifacts)
